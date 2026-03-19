@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MeriTO Technologies",
+        "description": "Zadaj MQTT doménu používanú v topicoch zariadení (napr. DEMO).\nTopicy budú vo formáte: Relay/{doména}/{MAC}/Data",
+        "data": {
+          "mqtt_domain": "MQTT doména"
+        }
+      },
+      "reconfigure": {
+        "title": "MeriTO Technologies — rekonfigurácia",
+        "data": {
+          "mqtt_domain": "MQTT doména"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Táto MQTT doména je už nakonfigurovaná.",
+      "mqtt_not_available": "MQTT integrácia nie je dostupná. Najskôr nainštaluj a nakonfiguruj Mosquitto broker."
+    },
+    "error": {
+      "invalid_domain": "MQTT doména nesmie byť prázdna."
+    }
+  }
+}

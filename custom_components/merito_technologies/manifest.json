@@ -1,0 +1,12 @@
+{
+  "domain": "merito_technologies",
+  "name": "MeriTO Technologies",
+  "version": "1.0.0",
+  "config_flow": true,
+  "documentation": "https://github.com/meritorelays/ha-merito-technologies",
+  "issue_tracker": "https://github.com/meritorelays/ha-merito-technologies/issues",
+  "dependencies": ["mqtt"],
+  "codeowners": ["@meritorelays"],
+  "iot_class": "local_push",
+  "requirements": []
+}

@@ -1,0 +1,9 @@
+{
+  "name": "MeriTO Technologies",
+  "content_in_root": false,
+  "filename": "",
+  "country": [],
+  "homeassistant": "2023.6.0",
+  "persistent_directory": null,
+  "iot_class": "local_push"
+}
