@@ -3,10 +3,10 @@
   "name": "MeriTO Technologies",
   "version": "1.0.0",
   "config_flow": true,
-  "documentation": "https://github.com/meritorelays/ha-merito-technologies",
-  "issue_tracker": "https://github.com/meritorelays/ha-merito-technologies/issues",
+  "documentation": "https://github.com/tomasandrejdessynerio/Merito_HA",
+  "issue_tracker": "https://github.com/tomasandrejdessynerio/Merito_HA/issues",
   "dependencies": ["mqtt"],
-  "codeowners": ["@meritorelays"],
+  "codeowners": [],
   "iot_class": "local_push",
   "requirements": []
 }

@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
+
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.components import mqtt
-from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers import config_validation as cv
+from homeassistant.components.mqtt import DOMAIN as MQTT_DOMAIN
 
 from .const import DOMAIN, CONF_MQTT_DOMAIN
 
@@ -15,14 +16,9 @@ _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_MQTT_DOMAIN, default="DEMO"): str,
+        vol.Required(CONF_MQTT_DOMAIN, default="DEMO"): cv.string,
     }
 )
-
-
-async def _async_check_mqtt_available(hass: HomeAssistant) -> bool:
-    """Check if MQTT integration is loaded and ready."""
-    return mqtt.async_get_mqtt_client(hass) is not None
 
 
 class MeritoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -31,13 +27,13 @@ class MeritoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(
-        self, user_input: dict | None = None
-    ) -> FlowResult:
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
         """Handle the initial configuration step shown in HA GUI."""
         errors: dict[str, str] = {}
 
-        # Check MQTT dependency
-        if not await _async_check_mqtt_available(self.hass):
+        # Check MQTT dependency via loaded integrations
+        if not self.hass.config_entries.async_entries(MQTT_DOMAIN):
             return self.async_abort(reason="mqtt_not_available")
 
         if user_input is not None:
@@ -46,7 +42,6 @@ class MeritoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not mqtt_domain:
                 errors[CONF_MQTT_DOMAIN] = "invalid_domain"
             else:
-                # Prevent duplicate config entries for the same MQTT domain
                 await self.async_set_unique_id(f"merito_{mqtt_domain}")
                 self._abort_if_unique_id_configured()
 
@@ -69,8 +64,8 @@ class MeritoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_reconfigure(
-        self, user_input: dict | None = None
-    ) -> FlowResult:
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
         """Allow reconfiguration of an existing entry."""
         errors: dict[str, str] = {}
 
