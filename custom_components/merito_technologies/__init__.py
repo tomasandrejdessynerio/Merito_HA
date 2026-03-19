@@ -1,7 +1,7 @@
 """MeriTO Technologies integration for Home Assistant.
 
 Subscribes to MQTT topics and auto-discovers MeriTO devices by topic prefix:
-  Relay/<domain>/<MAC>/Data  → creates a MeriTO Relay device with 4 switches
+  Relay/<domain>/<MAC>/Data  -> creates a MeriTO Relay device with 4 switches
 """
 from __future__ import annotations
 
@@ -35,13 +35,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
-        DATA_DEVICES: {},   # mac -> device info dict
-        DATA_UNSUB: [],     # list of unsubscribe callables
+        DATA_DEVICES: {},
+        DATA_UNSUB: [],
     }
 
-    # Subscribe to all device data topics for this MQTT domain
     relay_topic = f"Relay/{mqtt_domain}/+/Data"
-
     _LOGGER.debug("MeriTO: subscribing to '%s'", relay_topic)
 
     @callback
@@ -49,7 +47,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         """Handle incoming MQTT message and register new devices."""
         try:
             parts = msg.topic.split("/")
-            # Expected: Relay / <domain> / <MAC> / Data
             if len(parts) != 4:
                 return
 
@@ -66,10 +63,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
             entry_data = hass.data[DOMAIN][entry.entry_id]
             if mac in entry_data[DATA_DEVICES]:
-                # Already registered — entity platform handles state updates
+                # Already registered — switch platform handles state updates
                 return
 
-            # Parse first message to validate payload
             try:
                 payload = json.loads(msg.payload)
             except (json.JSONDecodeError, ValueError):
@@ -112,11 +108,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 "set_topic": f"Relay/{mqtt_domain}/{mac}/SetState",
             }
 
-            # Forward to switch platform to create 4 switch entities
-            hass.async_create_task(
-                hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-                if not entry.state.recoverable
-                else _async_add_relay_switches(hass, entry, mac)
+            # Fire event — switch platform listener will add 4 entities
+            hass.bus.async_fire(
+                f"{DOMAIN}_new_device",
+                {"entry_id": entry.entry_id, "mac": mac},
             )
 
         except Exception:  # pylint: disable=broad-except
@@ -129,7 +124,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     hass.data[DOMAIN][entry.entry_id][DATA_UNSUB].append(unsub)
 
-    # Forward platform setup (switch) — entities are added dynamically
+    # Set up switch platform (will register the event listener for new devices)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -137,30 +132,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def _async_add_relay_switches(
-    hass: HomeAssistant, entry: ConfigEntry, mac: str
-) -> None:
-    """Signal the switch platform to add entities for a newly found device."""
-    hass.bus.async_fire(
-        f"{DOMAIN}_new_device",
-        {"entry_id": entry.entry_id, "mac": mac},
-    )
-
-
 async def _async_update_listener(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> None:
-    """Handle options update — reload integration."""
+    """Reload integration when config entry options change."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry and clean up subscriptions."""
+    """Unload a config entry and clean up MQTT subscriptions."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
         entry_data = hass.data[DOMAIN].pop(entry.entry_id, {})
         for unsub in entry_data.get(DATA_UNSUB, []):
             unsub()
+        _LOGGER.debug("MeriTO: entry %s unloaded, subscriptions cancelled", entry.entry_id)
 
     return unload_ok
